@@ -2,11 +2,8 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/get_navigation.dart';
-import 'package:get/get_navigation/src/routes/transitions_type.dart';
+import 'package:get/get.dart';
 import 'package:project_01/config/config.dart';
-import 'package:project_01/model/customersDataGetResponse.dart';
 import 'package:project_01/pages/login.dart';
 import 'package:project_01/pages/mainPage.dart';
 import 'package:quickalert/models/quickalert_type.dart';
@@ -14,33 +11,30 @@ import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'package:http/http.dart' as http;
 
 class Userprofile extends StatefulWidget {
-  int uid = 0;
+  final int uid;
+
   Userprofile({super.key, required this.uid});
 
   @override
   State<Userprofile> createState() => _UserprofileState();
 }
 
-var _isObscure = true;
-
 class _UserprofileState extends State<Userprofile> {
   String url = '';
-  Map<String, dynamic> userData = {}; // To store the user data
-  TextEditingController _usernameController = TextEditingController();
+  Map<String, dynamic> userData = {};
   TextEditingController nameCtl = TextEditingController();
   TextEditingController phoneCtl = TextEditingController();
   TextEditingController emailCtl = TextEditingController();
-    TextEditingController passwordCtl = TextEditingController();
+  TextEditingController passwordCtl = TextEditingController();
+  TextEditingController imageCtl = TextEditingController(); // Controller for image URL
   String image = '';
-
 
   @override
   void initState() {
     super.initState();
     Configuration.getConfig().then((config) {
       setState(() {
-        url = config[
-            'apiEndpoint']; // Ensure setState is called to rebuild with new URL
+        url = config['apiEndpoint'];
       });
       log('API URL set to: $url');
       fetchUserData(widget.uid);
@@ -53,28 +47,28 @@ class _UserprofileState extends State<Userprofile> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Profile header
             Container(
               width: MediaQuery.of(context).size.width,
               height: 250,
               decoration: BoxDecoration(
-                  color: const Color(0xFF0085FF),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(25),
-                    bottomRight: Radius.circular(25),
+                color: const Color(0xFF0085FF),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(25),
+                  bottomRight: Radius.circular(25),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade500,
+                    offset: const Offset(2.0, 2.0),
+                    blurRadius: 7.0,
+                    spreadRadius: 1.0,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.grey.shade500,
-                        offset: const Offset(2.0, 2.0),
-                        blurRadius: 7.0,
-                        spreadRadius: 1.0)
-                  ]),
+                ],
+              ),
               child: Column(
-                // mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Container(
-                    height: 60,
-                  ),
+                  const SizedBox(height: 60),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Container(
@@ -83,496 +77,311 @@ class _UserprofileState extends State<Userprofile> {
                       child: Row(
                         children: [
                           Expanded(
-                              child: Container(
-                            alignment: Alignment.centerLeft,
-                            height: 25,
                             child: GestureDetector(
-                                onTap: () {
-                                  Get.to(
-                                      () => MainPageLotto(
-                                            uid: widget.uid,
-                                          ),
-                                      transition: Transition.circularReveal,
-                                      duration: const Duration(seconds: 2));
-                                },
-                                child: Image.asset(
-                                    'assets/images/angle-left.png')),
-                          )),
-                          Expanded(
-                              child: Container(
-                            alignment: Alignment.centerRight,
-                            child: const Text(
+                              onTap: () {
+                                Get.to(
+                                  () => MainPageLotto(uid: widget.uid),
+                                  transition: Transition.circularReveal,
+                                  duration: const Duration(seconds: 2),
+                                );
+                              },
+                              child: Image.asset('assets/images/angle-left.png'),
+                            ),
+                          ),
+                          const Expanded(
+                            child: Text(
                               "โปรไฟล์ของคุณ",
                               style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white),
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
-                          )),
+                          ),
                         ],
                       ),
                     ),
                   ),
+                  // Profile Image from URL
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      height: 120,
-                      child: GestureDetector(
-                        onTap: () {
-                          log("Change profile...");
-                        },
-                        child: CircleAvatar(
-                          radius: 60,
-                          backgroundColor: Colors.white,
-                          backgroundImage:
-                              AssetImage("assets/images/profile.png"),
-                        ),
-                      ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: CircleAvatar(
+                      radius: 60,
+                      backgroundColor: Colors.white,
+                      backgroundImage: imageCtl.text.isNotEmpty
+                          ? NetworkImage(imageCtl.text)
+                          : const AssetImage("assets/images/profile.png")
+                              as ImageProvider, // Default profile image if no URL
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
-            Container(
-              height: 50,
+            const SizedBox(height: 50),
+            // Full Name Input
+            buildTextField(
+              label: "Fullname",
+              controller: nameCtl,
+              hintText: "Fullname",
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                margin: EdgeInsets.symmetric(vertical: 10),
-                height: 45,
-                child: Row(
-                  children: [
-                    Container(
-                      alignment: Alignment.centerLeft,
-                      width: 100,
-                      child: Text(
-                        "Username",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    Expanded(
-                      child: Container(
-                        // color: Colors.lightGreenAccent,
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(230, 230, 230, 0.965),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: TextField(
-                          // controller: _controller,
-
-
-                          textAlign: TextAlign.center,
-
-                          cursorColor: Colors.black,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "Username",
-                            hintStyle: TextStyle(
-                              fontSize: 16,
-                              color: Color.fromRGBO(163, 163, 163, 0.965),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          onSubmitted: (value) {
-    log("Username input value: $value");  // Log the entered value when submitted
-  },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            // Phone Input
+            buildTextField(
+              label: "Phone",
+              controller: phoneCtl,
+              hintText: "Phone",
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                margin: EdgeInsets.symmetric(vertical: 10),
-                height: 45,
-                child: Row(
-                  children: [
-                    Container(
-                      alignment: Alignment.centerLeft,
-                      width: 100,
-                      child: Text(
-                        "Fullname",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    Expanded(
-                      child: Container(
-                        // color: Colors.lightGreenAccent,
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(230, 230, 230, 0.965),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: TextField(
-                          controller: nameCtl,
-
-                          textAlign: TextAlign.center,
-
-                          cursorColor: Colors.black,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "Fullname",
-                            hintStyle: TextStyle(
-                              fontSize: 16,
-                              color: Color.fromRGBO(163, 163, 163, 0.965),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          onSubmitted: (value) {
-                            log("Fullname input value: $value");
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            // Email Input
+            buildTextField(
+              label: "Email",
+              controller: emailCtl,
+              hintText: "Email",
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                margin: EdgeInsets.symmetric(vertical: 10),
-                height: 45,
-                child: Row(
-                  children: [
-                    Container(
-                      alignment: Alignment.centerLeft,
-                      width: 100,
-                      child: Text(
-                        "Phone",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    Expanded(
-                      child: Container(
-                        // color: Colors.lightGreenAccent,
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(230, 230, 230, 0.965),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: TextField(
-                          controller: phoneCtl,
-
-                          textAlign: TextAlign.center,
-
-                          cursorColor: Colors.black,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "Phone",
-                            hintStyle: TextStyle(
-                              fontSize: 16,
-                              color: Color.fromRGBO(163, 163, 163, 0.965),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          onSubmitted: (value) {
-                            log("Phone input value: $value");
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            // Password Input
+            buildTextField(
+              label: "Password",
+              controller: passwordCtl,
+              hintText: "Password",
+              obscureText: true,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                margin: EdgeInsets.symmetric(vertical: 10),
-                height: 45,
-                child: Row(
-                  children: [
-                    Container(
-                      alignment: Alignment.centerLeft,
-                      width: 100,
-                      child: Text(
-                        "Email",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    Expanded(
-                      child: Container(
-                        // color: Colors.lightGreenAccent,
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(230, 230, 230, 0.965),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: TextField(
-                          controller: emailCtl,
-
-                          textAlign: TextAlign.center,
-
-                          cursorColor: Colors.black,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "Email",
-                            hintStyle: TextStyle(
-                              fontSize: 16,
-                              color: Color.fromRGBO(163, 163, 163, 0.965),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          onSubmitted: (value) {
-                            log("Email input value: $value");
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                margin: EdgeInsets.symmetric(vertical: 10),
-                height: 45,
-                child: Row(
-                  children: [
-                    Container(
-                      alignment: Alignment.centerLeft,
-                      width: 100,
-                      child: Text(
-                        "Password",
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    Expanded(
-                      child: Container(
-                        // color: Colors.lightGreenAccent,
-                        decoration: BoxDecoration(
-                          color: Color.fromRGBO(230, 230, 230, 0.965),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: TextField(
-                          controller: passwordCtl,
-                          obscureText: _isObscure,
-                          obscuringCharacter: "•",
-                          textAlign: TextAlign.center,
-
-                          cursorColor: Colors.black,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: "Password",
-                            hintStyle: TextStyle(
-                              fontSize: 16,
-                              color: Color.fromRGBO(163, 163, 163, 0.965),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          onSubmitted: (value) {
-                            log("Password input value: $value");
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            // Image URL Input
+            buildTextField(
+              label: "Image URL",
+              controller: imageCtl,
+              hintText: "Enter Image URL",
+              onChanged: (value) {
+                setState(() {
+                  image = value;
+                });
+              },
             ),
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 90,
-        decoration: BoxDecoration(
-            color: Color.fromARGB(255, 216, 216, 216),
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.grey.shade500,
-                  offset: const Offset(2.0, 2.0),
-                  blurRadius: 7.0,
-                  spreadRadius: 1.0)
-            ]),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      bottomNavigationBar: buildBottomNavigation(context),
+    );
+  }
+
+  // Helper function to build text fields
+  Widget buildTextField({
+    required String label,
+    required TextEditingController controller,
+    required String hintText,
+    bool obscureText = false,
+    Function(String)? onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        height: 45,
+        child: Row(
           children: [
-            GestureDetector(
-              onTap: () {
-                log("Logedout...");
-                showModalBottomSheet(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Container(
-                        height: 250,
-                        decoration: BoxDecoration(
-                            color: Color.fromARGB(255, 255, 255, 255),
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.grey.shade400,
-                                  offset: const Offset(2.0, 2.0),
-                                  blurRadius: 7.0,
-                                  spreadRadius: 1.0)
-                            ]),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              height: 120,
-                              alignment: Alignment.center,
-                              child: Text(
-                                "ยืนยันการออกจากระบบ LOTTO?",
-                                style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color:
-                                        const Color.fromARGB(255, 220, 49, 49)),
-                              ),
-                            ),
-                            Container(
-                              height: 100,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                      child: GestureDetector(
-                                    onTap: () {
-                                      log("ยกเลิกการลบข้อมูล");
-                                      Navigator.pop(context);
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                          top: 20,
-                                          bottom: 20,
-                                          left: 10,
-                                          right: 10),
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                            color: const Color.fromARGB(
-                                                255, 220, 49, 49),
-                                            borderRadius:
-                                                BorderRadius.circular(15),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.grey.shade400,
-                                                  offset:
-                                                      const Offset(2.0, 2.0),
-                                                  blurRadius: 7.0,
-                                                  spreadRadius: 1.0)
-                                            ]),
-                                        child: Text(
-                                          "ยกเลิก",
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white),
-                                        ),
-                                      ),
-                                    ),
-                                  )),
-                                  Expanded(
-                                      child: Padding(
-                                    padding: EdgeInsets.only(
-                                        top: 20,
-                                        bottom: 20,
-                                        left: 10,
-                                        right: 10),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        log("ยืนยันการลบข้อมูล");
-                                        showAlert();
-                                        Get.to(() => const LoginPage(),
-                                            transition: Transition.fadeIn,
-                                            duration:
-                                                const Duration(seconds: 7));
-                                      },
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                            color:
-                                                Color.fromRGBO(0, 175, 12, 10),
-                                            borderRadius:
-                                                BorderRadius.circular(15),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                  color: Colors.grey.shade400,
-                                                  offset:
-                                                      const Offset(2.0, 2.0),
-                                                  blurRadius: 7.0,
-                                                  spreadRadius: 1.0)
-                                            ]),
-                                        child: Text(
-                                          "ยืนยัน",
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white),
-                                        ),
-                                      ),
-                                    ),
-                                  )),
-                                ],
-                              ),
-                            )
-                          ],
-                        ),
-                      );
-                    });
-              },
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10),
-                child: Container(
-                  alignment: Alignment.center,
-                  height: 60,
-                  decoration: BoxDecoration(
-                      color: Color.fromRGBO(238, 78, 78, 10),
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.grey.shade500,
-                            offset: const Offset(2.0, 2.0),
-                            blurRadius: 3.0,
-                            spreadRadius: 1.0)
-                      ]),
-                  child: Text(
-                    "Log out ออกจากระบบ",
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+            Container(
+              alignment: Alignment.centerLeft,
+              width: 100,
+              child: Text(
+                label,
+                style: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(230, 230, 230, 0.965),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: TextField(
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  cursorColor: Colors.black,
+                  obscureText: obscureText,
+                  onChanged: onChanged,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: hintText,
+                    hintStyle: const TextStyle(
+                      fontSize: 16,
+                      color: Color.fromRGBO(163, 163, 163, 0.965),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  onSubmitted: (value) {
+                    log("$label input value: $value");
+                  },
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
-  void showAlert() {
-    QuickAlert.show(
-        context: context,
-        title: "ออกจากระบบเสร็จสิ้น",
-        type: QuickAlertType.success);
+  // Function to build bottom navigation bar
+  Widget buildBottomNavigation(BuildContext context) {
+    return Container(
+      height: 90,
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 216, 216, 216),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade500,
+            offset: const Offset(2.0, 2.0),
+            blurRadius: 7.0,
+            spreadRadius: 1.0,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: () {
+              log("Logged out...");
+              showModalBottomSheet(
+                context: context,
+                builder: (BuildContext context) {
+                  return buildLogoutConfirmation(context);
+                },
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Container(
+                alignment: Alignment.center,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(238, 78, 78, 10),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade500,
+                      offset: const Offset(2.0, 2.0),
+                      blurRadius: 3.0,
+                      spreadRadius: 1.0,
+                    ),
+                  ],
+                ),
+                child: const Text(
+                  "Log out ออกจากระบบ",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Future<void> fetchUserData(int uid) async { // Add your base URL here
+  // Function to display logout confirmation
+  Widget buildLogoutConfirmation(BuildContext context) {
+    return Container(
+      height: 250,
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 255, 255, 255),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade400,
+            offset: const Offset(2.0, 2.0),
+            blurRadius: 7.0,
+            spreadRadius: 1.0,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            "ต้องการออกจากระบบหรือไม่?",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 15),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                buildLogoutButton(
+                  context: context,
+                  label: "ยืนยัน",
+                  color: const Color.fromARGB(255, 243, 51, 51),
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const LoginPage()),
+                    );
+                    QuickAlert.show(
+                      context: context,
+                      type: QuickAlertType.success,
+                      text: 'ออกจากระบบสำเร็จ!',
+                    );
+                  },
+                ),
+                buildLogoutButton(
+                  context: context,
+                  label: "ยกเลิก",
+                  color: const Color.fromARGB(255, 110, 110, 110),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Function to create logout confirmation buttons
+  Widget buildLogoutButton({
+    required BuildContext context,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 120,
+        alignment: Alignment.center,
+        height: 45,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> fetchUserData(int uid) async {
     if (url.isEmpty) {
-      print('API URL ยังไม่ถูกตั้งค่า.');
+      log('API URL ยังไม่ถูกตั้งค่า.');
       return;
     }
 
     final apiUrl = '$url/customers/$uid';
-    print('ส่งคำขอ GET ไปที่: $apiUrl');
+    log('ส่งคำขอ GET ไปที่: $apiUrl');
 
     try {
       final response = await http.get(
@@ -582,28 +391,26 @@ class _UserprofileState extends State<Userprofile> {
         },
       );
 
-      print('ได้รับการตอบกลับด้วยรหัสสถานะ: ${response.statusCode}');
-      print('เนื้อหาการตอบกลับ: ${response.body}');
-
+      log('ได้รับการตอบกลับด้วยรหัสสถานะ: ${response.statusCode}');
       if (response.statusCode == 200) {
         final customersDataGetResponse = jsonDecode(response.body);
-        print('ข้อมูลผู้ใช้ที่แยกออกมา: ${jsonEncode(customersDataGetResponse)}');
+        log('ข้อมูลผู้ใช้ที่แยกออกมา: ${jsonEncode(customersDataGetResponse)}');
 
         setState(() {
-          nameCtl.text = customersDataGetResponse['fullname'];
-          phoneCtl.text = customersDataGetResponse['phoneNumber'];
-          emailCtl.text = customersDataGetResponse['email'];
-          image = customersDataGetResponse['image'];
-          passwordCtl.text = customersDataGetResponse['password'];
+          nameCtl.text = customersDataGetResponse['fullname'] ?? '';
+          phoneCtl.text = customersDataGetResponse['phone_number'] ?? '';
+          emailCtl.text = customersDataGetResponse['email'] ?? '';
+          passwordCtl.text = customersDataGetResponse['password'] ?? '';
+          image = customersDataGetResponse['image'] ?? '';
+          imageCtl.text = image; // Update the image URL field
         });
 
-        print("ข้อมูลผู้ใช้ได้รับการอัปเดตในสถานะแล้ว.");
+        log("ข้อมูลผู้ใช้ได้รับการอัปเดตในสถานะแล้ว.");
       } else {
-        print('คำขอล้มเหลวด้วยสถานะ: ${response.statusCode}, เนื้อหา: ${response.body}');
+        log('คำขอล้มเหลวด้วยสถานะ: ${response.statusCode}, เนื้อหา: ${response.body}');
       }
     } catch (e) {
-      print('ข้อผิดพลาดระหว่างการ fetchUserData: $e');
+      log('ข้อผิดพลาดระหว่างการ fetchUserData: $e');
     }
-}
-
+  }
 }

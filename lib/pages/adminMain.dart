@@ -11,6 +11,8 @@ import 'package:project_01/config/config.dart';
 import 'package:project_01/pages/adminProfile.dart';
 import 'package:project_01/pages/showLottoAdmin.dart';
 import 'package:project_01/pages/userList.dart';
+import 'package:quickalert/models/quickalert_type.dart';
+import 'package:quickalert/widgets/quickalert_dialog.dart';
 
 class adminMainPage extends StatefulWidget {
   int uid = 0;
@@ -23,6 +25,7 @@ class adminMainPage extends StatefulWidget {
 class _adminMainPageState extends State<adminMainPage> {
   @override
   Widget build(BuildContext context) {
+    print('Customer id: ${widget.uid}');
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -210,6 +213,8 @@ class _adminMainPageState extends State<adminMainPage> {
                                         ],
                                       ),
                                     ),
+
+                                    
                                   ),
                                 ],
                               ),
@@ -225,8 +230,202 @@ class _adminMainPageState extends State<adminMainPage> {
           ],
         ),
       ),
+      bottomNavigationBar: Container(
+        height: 70,
+        decoration: BoxDecoration(
+            color: Color.fromARGB(255, 225, 225, 225),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.grey.shade500,
+                  offset: const Offset(2.0, 3.0),
+                  blurRadius: 7.0,
+                  spreadRadius: 1.0)
+            ]),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: GestureDetector(
+                onTap: () {
+                  print("reset btn...");
+                  showModalBottomSheet(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return Container(
+                          height: 250,
+                          decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 255, 255, 255),
+                              borderRadius: BorderRadius.circular(15),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.grey.shade400,
+                                    offset: const Offset(2.0, 2.0),
+                                    blurRadius: 7.0,
+                                    spreadRadius: 1.0)
+                              ]),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                height: 120,
+                                alignment: Alignment.center,
+                                child: Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        child: const Text(
+                                          "ยืนยันการรีเซ็ทระบบใหม่ทั้งหมด?",
+                                          style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color.fromARGB(
+                                                  255, 220, 49, 49)),
+                                        ),
+                                      ),
+                                    ),
+                                    const Expanded(
+                                      child: Text(
+                                        "ข้อมูลทุกอย่างในระบบจะหายไป (ทั้งสลากฯและผู้ใช้งานระบบ)",
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color.fromARGB(
+                                                255, 220, 49, 49)),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                              SizedBox(
+                                height: 100,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                        child: GestureDetector(
+                                      onTap: () {
+                                        print("ยกเลิกการลบข้อมูล");
+                                        Navigator.pop(context);
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                            top: 20,
+                                            bottom: 20,
+                                            left: 10,
+                                            right: 10),
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                              color: const Color.fromARGB(
+                                                  255, 220, 49, 49),
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                    color: Colors.grey.shade400,
+                                                    offset:
+                                                        const Offset(2.0, 2.0),
+                                                    blurRadius: 7.0,
+                                                    spreadRadius: 1.0)
+                                              ]),
+                                          child: const Text(
+                                            "ยกเลิก",
+                                            style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    )),
+                                    Expanded(
+                                        child: Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 20,
+                                          bottom: 20,
+                                          left: 10,
+                                          right: 10),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          print("ยืนยันการลบข้อมูล");
+                                          showAlert();
+                                        },
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                              color: const Color.fromRGBO(
+                                                  0, 175, 12, 10),
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                    color: Colors.grey.shade400,
+                                                    offset:
+                                                        const Offset(2.0, 2.0),
+                                                    blurRadius: 7.0,
+                                                    spreadRadius: 1.0)
+                                              ]),
+                                          child: const Text(
+                                            "ยืนยัน",
+                                            style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                      ),
+                                    )),
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                        );
+                      });
+                },
+                child: Container(
+                  alignment: Alignment.center,
+                  height: 50,
+                  decoration: BoxDecoration(
+                      color: const Color(0xFF0085FF),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.grey.shade500,
+                            offset: const Offset(2.0, 2.0),
+                            blurRadius: 3.0,
+                            spreadRadius: 1.0)
+                      ]),
+                  child: Text(
+                    "รีเซ็ทระบบ LOTTO ทั้งหมด",
+                    style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                ),
+              ),
+            )
+          ],
+        ),
+      ),
     );
+      }
+    void showAlert() {
+    QuickAlert.show(
+        context: context,
+        title: "รีเซ็ทระบบใหม่เสร็จสิ้น",
+        confirmBtnText: ("ตกลง"),
+        type: QuickAlertType.success);
   }
+    
 }
 
 class LottoPrizeCategories extends StatefulWidget {
@@ -487,7 +686,12 @@ class _LottoPrizeCategoriesState extends State<LottoPrizeCategories> {
             ),
           ),
         ),
+
+        
+        
       ],
+      
     );
-  }
+
+}
 }

@@ -1,19 +1,85 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:developer';
 
 import 'package:get/get_core/get_core.dart';
 import 'package:get/get_navigation/get_navigation.dart';
+import 'package:project_01/config/config.dart';
+import 'package:project_01/model/transactionsGetResponse.dart';
 import 'package:project_01/pages/mainPage.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class WalletPage extends StatefulWidget {
   int uid = 0;
-   WalletPage({super.key, required this.uid});
+  WalletPage({super.key, required this.uid});
 
   @override
   State<WalletPage> createState() => _WalletPageState();
 }
 
 class _WalletPageState extends State<WalletPage> {
+  String url = '';
+  int walletBalance = 0;
+  List<Transaction> transactions = [];
+  String image = '';
+
+  @override
+  void initState() {
+    super.initState();
+    getUrl();
+  }
+
+  Future<void> getUrl() async {
+    try {
+      var config = await Configuration.getConfig();
+      setState(() {
+        url = config['apiEndpoint'];
+      });
+
+      // Fetch lottos only after the URL is set correctly
+      if (url.isNotEmpty) {
+        await fetchLottos();
+      }
+    } catch (e) {
+      print("Error fetching configuration: $e");
+    }
+  }
+
+  Future<void> fetchLottos() async {
+    if (url.isEmpty) {
+      print('Error: API endpoint URL is not set.');
+      return;
+    }
+
+    try {
+      final response =
+          await http.get(Uri.parse('$url/transactions/${widget.uid}'));
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        try {
+          final transactionsGetResponse =
+              transactionsGetResponseFromJson(response.body);
+          setState(() {
+            walletBalance = transactionsGetResponse.data.walletBalance;
+            transactions = transactionsGetResponse.data.transactions;
+            image = transactionsGetResponse.data.image;
+          });
+        } catch (e) {
+          print('Error parsing transaction data: $e');
+        }
+      } else {
+        print('Failed to fetch data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: ${e.toString()}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     log('Customer id: ${widget.uid}');
@@ -38,7 +104,10 @@ class _WalletPageState extends State<WalletPage> {
                             child: GestureDetector(
                                 onTap: () {
                                   log("Back to...");
-                                  Get.to(() =>  MainPageLotto(uid: widget.uid,),
+                                  Get.to(
+                                      () => MainPageLotto(
+                                            uid: widget.uid,
+                                          ),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
@@ -103,17 +172,33 @@ class _WalletPageState extends State<WalletPage> {
                             Expanded(
                               child: Container(
                                 height: 70,
-                                child: const Align(
+                                child: Align(
                                   alignment: Alignment.centerRight,
                                   child: CircleAvatar(
                                     radius: 35,
                                     backgroundColor: Colors.white,
-                                    backgroundImage:
-                                        AssetImage("assets/images/profile.png"),
+                                    backgroundImage: (image.isNotEmpty &&
+                                            Uri.tryParse(image)?.isAbsolute ==
+                                                true)
+                                        ? NetworkImage(image)
+                                        : AssetImage(
+                                                "assets/images/profile.png")
+                                            as ImageProvider, // Use asset image if URL is invalid
+                                    onBackgroundImageError:
+                                        (exception, stackTrace) {
+                                      print(
+                                          'Error loading profile image: $exception');
+                                    },
+                                    child: image.isEmpty
+                                        ? Icon(Icons.person,
+                                            size: 35,
+                                            color: Colors
+                                                .grey) // Optional: Display icon if no image URL
+                                        : null,
                                   ),
                                 ),
                               ),
-                            )
+                            ),
                           ],
                         ),
                       ),
@@ -125,12 +210,14 @@ class _WalletPageState extends State<WalletPage> {
                         width: MediaQuery.of(context).size.width,
                         margin: const EdgeInsets.only(bottom: 30),
                         height: 40,
-                        child: const Text(
-                          "XXXXXXX",
+                        child: Text(
+                          walletBalance
+                              .toString(), // No const here since walletBalance is dynamic
                           style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -175,102 +262,98 @@ class _WalletPageState extends State<WalletPage> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                height: 65,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 255, 255, 255),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.shade400,
-                      offset: const Offset(0, 5), // ย้ายเงาเฉพาะในแนวดิ่ง
-                      blurRadius: 10, // เบลอเงา
-                      spreadRadius: 0, // ไม่มีการขยายเงา
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemCount: transactions.length,
+                itemBuilder: (context, index) {
+                  final transaction = transactions[index];
+                  DateTime dateTime;
+                  try {
+                    dateTime = DateTime.parse(transaction.transactionDate);
+                  } catch (e) {
+                    dateTime = DateTime.now();
+                    print('Error parsing date: $e');
+                  }
+                  final formattedDate =
+                      DateFormat('d / MM / y H:mm:ss').format(dateTime);
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Container(
+                      height: 85,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.shade400,
+                            offset: const Offset(0, 5),
+                            blurRadius: 10,
+                            spreadRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Text(
+                              formattedDate, // Display formatted date
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  child: Container(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      transaction.transactionType,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  child: Container(
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      transaction.amount.toString(),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: transaction.transactionType ==
+                                                "Prize Payout"
+                                            ? Colors.green
+                                            : Colors.red,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Container(
-                        alignment: Alignment.centerLeft,
-                        child: const Text(
-                          "จ่ายค่าสินค้า/บริการ",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    )),
-                    Expanded(
-                        child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Container(
-                        alignment: Alignment.centerRight,
-                        child: const Text(
-                          "1000",
-                          style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red),
-                        ),
-                      ),
-                    )),
-                  ],
-                ),
+                  );
+                },
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                height: 65,
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 255, 255, 255),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.shade400,
-                      offset: const Offset(0, 5), // ย้ายเงาเฉพาะในแนวดิ่ง
-                      blurRadius: 10, // เบลอเงา
-                      spreadRadius: 0, // ไม่มีการขยายเงา
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Container(
-                        alignment: Alignment.centerLeft,
-                        child: const Text(
-                          "เงินเข้า",
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    )),
-                    Expanded(
-                        child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Container(
-                        alignment: Alignment.centerRight,
-                        child: const Text(
-                          "1000",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 105, 244, 54)),
-                        ),
-                      ),
-                    )),
-                  ],
-                ),
-              ),
-            ),
+            )
           ],
         ),
       ),

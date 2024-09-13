@@ -7,7 +7,7 @@ import 'package:project_01/pages/adminMain.dart';
 import 'package:project_01/pages/loginmain.dart';
 
 class showLottoAdminPage extends StatefulWidget {
-            int uid = 0;
+  int uid = 0;
   showLottoAdminPage({super.key, required this.uid});
 
   @override
@@ -53,7 +53,10 @@ class _showLottoAdminPageState extends State<showLottoAdminPage> {
                             child: GestureDetector(
                                 onTap: () {
                                   log("Back Admin...");
-                                  Get.to(() => adminMainPage(uid: widget.uid,),
+                                  Get.to(
+                                      () => adminMainPage(
+                                            uid: widget.uid,
+                                          ),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },

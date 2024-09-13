@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/get_navigation/src/routes/transitions_type.dart';
+import 'package:project_01/pages/adminMain.dart';
 import 'package:project_01/pages/login.dart';
 import 'package:project_01/pages/mainPage.dart';
 import 'package:quickalert/models/quickalert_type.dart';
@@ -22,6 +23,7 @@ var _isObscure = true;
 class _adminProfilePageState extends State<adminProfilePage> {
   @override
   Widget build(BuildContext context) {
+  print('Customer id: ${widget.uid}');
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -61,7 +63,7 @@ class _adminProfilePageState extends State<adminProfilePage> {
                             height: 25,
                             child: GestureDetector(
                                 onTap: () {
-                                  Get.to(() => MainPageLotto(uid: widget.uid,),
+                                  Get.to(() => adminMainPage(uid: widget.uid,),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
