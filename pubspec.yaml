@@ -55,6 +55,13 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  fonts:
+    - family: Aleo
+      fonts:
+        - asset: assets\Aleo\Aleo-Bold.ttf
+          weight: 700
+        - asset: assets\Aleo\Aleo-Light.ttf
+          weight: 300
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -90,11 +97,6 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  fonts:
-    - family: Aleo
-      fonts:
-        - asset: fonts/Aleo-Italic-VariableFont_wght.ttf
-        
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro

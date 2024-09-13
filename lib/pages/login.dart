@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
                 // color: Color.fromARGB(255, 255, 33, 33),
                 child: const Text(
                   'Welcome To',
-                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700, fontFamily: 'Aleo'),
                 ),
               ),
               Container(
@@ -57,6 +57,7 @@ class _LoginPageState extends State<LoginPage> {
                       fontWeight: FontWeight.bold,
                       color:
                           Colors.white, // ใช้สีใดก็ได้เพื่อให้ข้อความไม่ใช่สีดำ
+                          fontFamily: 'Aleo'
                     ),
                   ),
                 ),

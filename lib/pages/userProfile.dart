@@ -6,6 +6,7 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/get_navigation/src/routes/transitions_type.dart';
 import 'package:project_01/config/config.dart';
+import 'package:project_01/model/customersDataGetResponse.dart';
 import 'package:project_01/pages/login.dart';
 import 'package:project_01/pages/mainPage.dart';
 import 'package:quickalert/models/quickalert_type.dart';
@@ -13,7 +14,7 @@ import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'package:http/http.dart' as http;
 
 class Userprofile extends StatefulWidget {
-              int uid = 0;
+  int uid = 0;
   Userprofile({super.key, required this.uid});
 
   @override
@@ -24,8 +25,14 @@ var _isObscure = true;
 
 class _UserprofileState extends State<Userprofile> {
   String url = '';
-  int userId = 1; // Example user ID
   Map<String, dynamic> userData = {}; // To store the user data
+  TextEditingController _usernameController = TextEditingController();
+  TextEditingController nameCtl = TextEditingController();
+  TextEditingController phoneCtl = TextEditingController();
+  TextEditingController emailCtl = TextEditingController();
+    TextEditingController passwordCtl = TextEditingController();
+  String image = '';
+
 
   @override
   void initState() {
@@ -36,6 +43,7 @@ class _UserprofileState extends State<Userprofile> {
             'apiEndpoint']; // Ensure setState is called to rebuild with new URL
       });
       log('API URL set to: $url');
+      fetchUserData(widget.uid);
     });
   }
 
@@ -80,7 +88,10 @@ class _UserprofileState extends State<Userprofile> {
                             height: 25,
                             child: GestureDetector(
                                 onTap: () {
-                                  Get.to(() => MainPageLotto(uid: widget.uid,),
+                                  Get.to(
+                                      () => MainPageLotto(
+                                            uid: widget.uid,
+                                          ),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
@@ -151,6 +162,7 @@ class _UserprofileState extends State<Userprofile> {
                         child: TextField(
                           // controller: _controller,
 
+
                           textAlign: TextAlign.center,
 
                           cursorColor: Colors.black,
@@ -165,8 +177,8 @@ class _UserprofileState extends State<Userprofile> {
                           ),
 
                           onSubmitted: (value) {
-                            log("Username input value: $value");
-                          },
+    log("Username input value: $value");  // Log the entered value when submitted
+  },
                         ),
                       ),
                     ),
@@ -198,7 +210,7 @@ class _UserprofileState extends State<Userprofile> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: TextField(
-                          // controller: _controller,
+                          controller: nameCtl,
 
                           textAlign: TextAlign.center,
 
@@ -247,7 +259,7 @@ class _UserprofileState extends State<Userprofile> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: TextField(
-                          // controller: _controller,
+                          controller: phoneCtl,
 
                           textAlign: TextAlign.center,
 
@@ -296,7 +308,7 @@ class _UserprofileState extends State<Userprofile> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: TextField(
-                          // controller: _controller,
+                          controller: emailCtl,
 
                           textAlign: TextAlign.center,
 
@@ -345,7 +357,7 @@ class _UserprofileState extends State<Userprofile> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: TextField(
-                          // controller: _controller,
+                          controller: passwordCtl,
                           obscureText: _isObscure,
                           obscuringCharacter: "•",
                           textAlign: TextAlign.center,
@@ -553,41 +565,45 @@ class _UserprofileState extends State<Userprofile> {
         type: QuickAlertType.success);
   }
 
-  Future<void> fetchUserData(int userId) async {
-  if (url.isEmpty) {
-    log('API URL ยังไม่ถูกตั้งค่า.');
-    return;
-  }
-
-  final apiUrl = '$url/customers/$userId';
-  log('ส่งคำขอ GET ไปที่: $apiUrl');
-
-  try {
-    final response = await http.get(
-      Uri.parse(apiUrl),
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-      },
-    );
-
-    log('ได้รับการตอบกลับด้วยรหัสสถานะ: ${response.statusCode}');
-    log('เนื้อหาการตอบกลับ: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> responseData = jsonDecode(response.body);
-      log('ข้อมูลผู้ใช้ที่แยกออกมา: $responseData');
-
-      setState(() {
-        userData = responseData;
-      });
-
-      log("ข้อมูลผู้ใช้ได้รับการอัปเดตในสถานะแล้ว.");
-    } else {
-      log('คำขอล้มเหลวด้วยสถานะ: ${response.statusCode}, เนื้อหา: ${response.body}');
+  Future<void> fetchUserData(int uid) async { // Add your base URL here
+    if (url.isEmpty) {
+      print('API URL ยังไม่ถูกตั้งค่า.');
+      return;
     }
-  } catch (e) {
-    log('ข้อผิดพลาดระหว่างการ fetchUserData: $e');
-  }
+
+    final apiUrl = '$url/customers/$uid';
+    print('ส่งคำขอ GET ไปที่: $apiUrl');
+
+    try {
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+      );
+
+      print('ได้รับการตอบกลับด้วยรหัสสถานะ: ${response.statusCode}');
+      print('เนื้อหาการตอบกลับ: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final customersDataGetResponse = jsonDecode(response.body);
+        print('ข้อมูลผู้ใช้ที่แยกออกมา: ${jsonEncode(customersDataGetResponse)}');
+
+        setState(() {
+          nameCtl.text = customersDataGetResponse['fullname'];
+          phoneCtl.text = customersDataGetResponse['phoneNumber'];
+          emailCtl.text = customersDataGetResponse['email'];
+          image = customersDataGetResponse['image'];
+          passwordCtl.text = customersDataGetResponse['password'];
+        });
+
+        print("ข้อมูลผู้ใช้ได้รับการอัปเดตในสถานะแล้ว.");
+      } else {
+        print('คำขอล้มเหลวด้วยสถานะ: ${response.statusCode}, เนื้อหา: ${response.body}');
+      }
+    } catch (e) {
+      print('ข้อผิดพลาดระหว่างการ fetchUserData: $e');
+    }
 }
 
 }

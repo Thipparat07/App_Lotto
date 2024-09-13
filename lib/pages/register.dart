@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:project_01/config/config.dart';
@@ -20,6 +19,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController recheckPasswordController =
+      TextEditingController();
   bool isLoading = false;
   bool isOfflineMode = false;
 
@@ -231,6 +232,42 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             Container(
+              margin: const EdgeInsets.only(top: 3),
+              height: 70,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    alignment: Alignment.topLeft,
+                    child: const Text('Confirm Password'),
+                  ),
+                  Container(
+                      height: 45,
+                      padding: const EdgeInsets.symmetric(horizontal: 15),
+                      child: TextField(
+                          controller: recheckPasswordController,
+                          cursorColor: Colors.black,
+                          obscureText: true,
+                          obscuringCharacter: '•',
+                          decoration: InputDecoration(
+                              hintText: 'Confirm Password',
+                              hintStyle: const TextStyle(fontSize: 14),
+                              border: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                    width: 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10.0)),
+                              focusedBorder: OutlineInputBorder(
+                                  borderSide: const BorderSide(
+                                    color: Color.fromARGB(255, 0, 0, 0),
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10.0))))),
+                ],
+              ),
+            ),
+            Container(
               margin: const EdgeInsets.only(top: 45),
               width: MediaQuery.of(context).size.width,
               height: 40,
@@ -240,13 +277,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   _handleSignUp();
                 },
                 style: ButtonStyle(
-                  shape: WidgetStateProperty.all(
+                  shape: MaterialStateProperty.all(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.0),
                     ),
                   ),
                   backgroundColor:
-                      WidgetStateProperty.all(const Color(0xFF0085FF)),
+                      MaterialStateProperty.all(const Color(0xFF0085FF)),
                 ),
                 child: const Text(
                   'Sign up',
@@ -255,127 +292,115 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             Container(
-              margin: const EdgeInsets.only(top: 20),
-              child: const Text(
-                'Or sign up using',
-                style: TextStyle(color: Color.fromARGB(255, 165, 165, 165)),
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(top: 20, bottom: 30),
-              height: 50,
+              margin: const EdgeInsets.only(top: 10),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Expanded(
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                          image: AssetImage('assets/images/GGLogo.png'),
-                        ),
-                      ),
-                    ),
+                  const Text(
+                    "Already have an account?",
+                    style: TextStyle(fontSize: 14),
                   ),
-                  Expanded(
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(
-                            image: AssetImage('assets/images/FBLogo.png')),
-                      ),
-                    ),
-                  ),
+                  TextButton(
+                      onPressed: () {
+                        Get.to(() => const LoginPage(),
+                            transition: Transition.circularReveal,
+                            duration: const Duration(seconds: 2));
+                      },
+                      child: const Text('Login',
+                          style: TextStyle(
+                              fontSize: 14, color: Color(0xFF0085FF))))
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
+  Future<void> signUp(CustomerGetRequest user) async {
+    final uri =
+        Uri.parse('$url/customers/register'); // Use 'uri' to avoid conflict
+    final headers = {'Content-Type': 'application/json'};
+    final body = jsonEncode(user.toJson());
+
+    print('Request URL: $uri'); // Debug URL
+    print('Request headers: $headers'); // Debug headers
+    print('Request body: $body'); // Debug request body
+
+    try {
+      final response = await http.post(uri, headers: headers, body: body);
+
+      print('Response status: ${response.statusCode}'); // Debug response status
+      print('Response body: ${response.body}'); // Debug response body
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        if ('${jsonResponse['message']}' == 'Inserted Successfully') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('สมัครสมาชิกสำเร็จ')),
+          );
+          Get.to(() => const Loginmain(),
+              transition: Transition.circularReveal,
+              duration: const Duration(seconds: 2));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'การสมัครสมาชิกไม่สำเร็จ: ${jsonResponse['message']}')),
+          );
+        }
+      } else if (response.statusCode == 409) {
+        final jsonResponse = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content:
+                  Text('การสมัครสมาชิกไม่สำเร็จ: Email นี้อยู่ในระบบแล้วกรุณากรอกใหม่')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('เกิดข้อผิดพลาดในการเชื่อมต่อ')),
+        );
+      }
+    } catch (e) {
+      print('Error occurred: $e'); // Debug error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+      );
+    }
+  }
+
   void _handleSignUp() {
     final fullname = fullnameController.text.trim();
     final email = emailController.text.trim();
     final phone = phoneController.text.trim();
-    final password = passwordController.text;
+    final password = passwordController.text.trim();
+    final recheckPassword = recheckPasswordController.text.trim();
 
-    print('Fullname: $fullname');
-    print('Email: $email');
-    print('Phone: $phone');
-    print('Password: $password');
+    if (password != recheckPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('รหัสผ่านไม่ตรงกัน')),
+      );
+      return;
+    }
 
     if (fullname.isEmpty ||
         email.isEmpty ||
         phone.isEmpty ||
         password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณากรอกข้อมูลให้ครบทุกช่อง')),
+        const SnackBar(content: Text('กรุณากรอกข้อมูลให้ครบถ้วน')),
       );
       return;
     }
 
-    final user = CustomerGetRequest(
+    final newUser = CustomerGetRequest(
       fullname: fullname,
-      email: email,
       phoneNumber: phone,
+      email: email,
       password: password,
     );
 
-    signUp(user);
-  }
-
-  Future<void> signUp(CustomerGetRequest user) async {
-    final Uri url1 = Uri.parse(
-        '$url/customers/register'); // สร้าง URL สำหรับการส่งคำขอไปที่ API
-    final userData = user.toJson();
-    print('Sending to API: $userData');
-
-    try {
-      final response = await http.post(
-        url1,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(userData),
-      );
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('สมัครสมาชิกสำเร็จ')),
-        );
-
-        // รอนิดหน่อยเพื่อให้ผู้ใช้เห็นข้อความ
-        await Future.delayed(const Duration(seconds: 2));
-
-        // นำทางไปยังหน้า Login โดยแทนที่หน้าปัจจุบัน
-        Get.offAll(() => Loginmain());
-      } else {
-        var errorMessage = 'เกิดข้อผิดพลาด: ${response.statusCode}';
-        if (response.body.isNotEmpty) {
-          try {
-            var errorBody = json.decode(response.body);
-            errorMessage =
-                errorBody['message'] ?? errorBody['error'] ?? errorMessage;
-          } catch (e) {
-            print('Error parsing error message: $e');
-            errorMessage =
-                response.body; // ใช้ response body ดิบถ้า parse ไม่ได้
-          }
-        }
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(errorMessage)));
-      }
-    } catch (e) {
-      print('Error during sign up: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('เกิดข้อผิดพลาดในการเชื่อมต่อ: $e')),
-      );
-    }
+    signUp(newUser);
   }
 }

@@ -1,9 +1,13 @@
 import 'dart:developer';
+import 'dart:math';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/get_navigation.dart';
+import 'package:project_01/config/config.dart';
 import 'package:project_01/pages/adminProfile.dart';
 import 'package:project_01/pages/showLottoAdmin.dart';
 import 'package:project_01/pages/userList.dart';
@@ -17,8 +21,6 @@ class adminMainPage extends StatefulWidget {
 }
 
 class _adminMainPageState extends State<adminMainPage> {
-  final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,13 +48,11 @@ class _adminMainPageState extends State<adminMainPage> {
                   Container(
                     margin: const EdgeInsets.only(top: 70),
                     height: 40,
-                    // color: Colors.amber,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
                           alignment: Alignment.centerRight,
-                          // color: Color.fromARGB(255, 255, 152, 7),
                           child: const Text(
                             "Welcome To ",
                             style: TextStyle(
@@ -89,9 +89,9 @@ class _adminMainPageState extends State<adminMainPage> {
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.shade500,
-                      offset: const Offset(0, 4), // ย้ายเงาเฉพาะในแนวดิ่ง
-                      blurRadius: 10, // เบลอเงา
-                      spreadRadius: 0, // ไม่มีการขยายเงา
+                      offset: const Offset(0, 4),
+                      blurRadius: 10,
+                      spreadRadius: 0,
                     ),
                   ],
                 ),
@@ -103,7 +103,6 @@ class _adminMainPageState extends State<adminMainPage> {
                       child: Container(
                         alignment: Alignment.bottomLeft,
                         height: 40,
-                        // color: Colors.amber,
                         child: const Text(
                           "LOTTO",
                           style: TextStyle(
@@ -134,51 +133,7 @@ class _adminMainPageState extends State<adminMainPage> {
                                         children: [
                                           GestureDetector(
                                             onTap: () {
-                                              log("examine");
-                                              Get.to(
-                                                  () =>
-                                                       showLottoAdminPage(uid: widget.uid,),
-                                                  transition:
-                                                      Transition.circularReveal,
-                                                  duration: const Duration(
-                                                      seconds: 2));
-                                            },
-                                            child: Container(
-                                              height: 50,
-                                              decoration: const BoxDecoration(
-                                                  shape: BoxShape.circle,
-                                                  color: Color.fromRGBO(
-                                                      244, 206, 20, 10),
-                                                  image: DecorationImage(
-                                                      image: AssetImage(
-                                                          "assets/images/pageview.png"))),
-                                            ),
-                                          ),
-                                          Container(
-                                            height: 25,
-                                            alignment: Alignment.center,
-                                            child: const Text(
-                                              "ตรวจสอบสลากฯ",
-                                              style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color.fromRGBO(
-                                                      244, 206, 20, 10)),
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () {
-                                              log("User");
+                                              print("User");
                                               Get.to(() => userListPage(uid: widget.uid,),
                                                   transition:
                                                       Transition.circularReveal,
@@ -220,10 +175,10 @@ class _adminMainPageState extends State<adminMainPage> {
                                         children: [
                                           GestureDetector(
                                             onTap: () {
-                                              log("ProfileAdmin");
+                                              print("ProfileAdmin");
                                               Get.to(
                                                   () =>
-                                               adminProfilePage(uid: widget.uid,),
+                                                      adminProfilePage(uid: widget.uid,),
                                                   transition:
                                                       Transition.circularReveal,
                                                   duration: const Duration(
@@ -265,176 +220,274 @@ class _adminMainPageState extends State<adminMainPage> {
                 ),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                margin: EdgeInsets.symmetric(vertical: 10),
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey,
-                      offset: const Offset(1, 2), // ย้ายเงาเฉพาะในแนวดิ่ง
-                      blurRadius: 3, // เบลอเงา
-                      spreadRadius: 0, // ไม่มีการขยายเงา
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Container(
-                        alignment: Alignment.centerLeft,
-                        height: 30,
-                        child: Text(
-                          "รางวัลที่ 1",
-                          style: TextStyle(
-                              fontSize: 16,
-                              color: Color.fromRGBO(0, 133, 255, 10),
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Container(
-                        height: 50,
-                        // color: const Color.fromARGB(255, 52, 7, 255),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(6, (index) {
-                            return Container(
-                              height: 40,
-                              width: 40,
-                              margin: EdgeInsets.symmetric(horizontal: 7.5),
-                              child: TextField(
-                                controller: _controllers[index],
-                                keyboardType: TextInputType.number,
-                                maxLength: 1,
-                                textAlign: TextAlign.center,
-                                cursorColor:
-                                    Colors.black, // เปลี่ยนเป็นสีที่คุณต้องการ
-                                decoration: InputDecoration(
-                                  counterText: '',
-                                  border: OutlineInputBorder(),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        color:
-                                            const Color.fromARGB(255, 0, 0, 0),
-                                        width:
-                                            2.0), // สีและความหนาของ border เมื่อ focus
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(
-                                        color: Colors.grey,
-                                        width:
-                                            1.0), // สีและความหนาของ border เมื่อไม่มี focus
-                                  ),
-                                  contentPadding: EdgeInsets.symmetric(
-                                      vertical:
-                                          8), // เพิ่ม padding แนวตั้งเพื่อให้ข้อความอยู่กลาง
-                                ),
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(1),
-                                ],
-                                onChanged: (value) {
-                                  if (value.isNotEmpty) {
-                                    if (index < 5) {
-                                      // ถ้าค่ามีและ index ไม่ใช่ช่องสุดท้าย ให้ไปที่ช่องถัดไป
-                                      FocusScope.of(context).nextFocus();
-                                    }
-                                  } else {
-                                    if (index > 0) {
-                                      // ถ้าค่าที่กรอกหายไปและ index ไม่ใช่ช่องแรก ให้กลับไปที่ช่องก่อนหน้า
-                                      FocusScope.of(context).previousFocus();
-                                    }
-                                  }
-                                },
-                              ),
-                            );
-                          }),
-                        ),
-                      ),
-                      Container(
-                        height: 40,
-                        child: Row(
-                          children: [
-                            Expanded(
-                                child: GestureDetector(
-                              onTap: () {
-                                log("Search number");
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 7),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: Color.fromRGBO(0, 175, 12, 10),
-                                    borderRadius: BorderRadius.circular(5),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.shade600,
-                                        offset: const Offset(
-                                            2, 2), // ย้ายเงาเฉพาะในแนวดิ่ง
-                                        blurRadius: 2, // เบลอเงา
-                                        spreadRadius: 0, // ไม่มีการขยายเงา
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text("สุ่มตัวเลข",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white)),
-                                ),
-                              ),
-                            )),
-                            Expanded(
-                                child: GestureDetector(
-                              onTap: () {
-                                log("Search number");
-                              },
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 7),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: Color.fromRGBO(0, 133, 255, 10),
-                                    borderRadius: BorderRadius.circular(5),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.shade600,
-                                        offset: const Offset(
-                                            2, 2), // ย้ายเงาเฉพาะในแนวดิ่ง
-                                        blurRadius: 2, // เบลอเงา
-                                        spreadRadius: 0, // ไม่มีการขยายเงา
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text("ค้นหา",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white)),
-                                ),
-                              ),
-                            )),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Container(
-              height: 100,
-            )
+            LottoPrizeCategories(),
+            SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+}
+
+class LottoPrizeCategories extends StatefulWidget {
+  const LottoPrizeCategories({Key? key}) : super(key: key);
+
+  @override
+  _LottoPrizeCategoriesState createState() => _LottoPrizeCategoriesState();
+}
+
+class _LottoPrizeCategoriesState extends State<LottoPrizeCategories> {
+    String url = '';
+
+  @override
+  void initState() {
+    super.initState();
+    Configuration.getConfig().then(
+      (config) {
+        url = config['apiEndpoint'];
+      },
+    );
+  }
+
+
+
+  final List<List<TextEditingController>> _controllers =
+      List.generate(5, (_) => List.generate(6, (_) => TextEditingController()));
+  final List<bool> _isDrawn = List.generate(5, (_) => false);
+  bool _isSaved = false;
+
+  Future<void> _drawNumberFromAPI(int categoryIndex) async {
+    if (_isDrawn[categoryIndex]) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('รางวัลนี้ถูกสุ่มไปแล้ว')),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$url/admin/draw-one'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        if (data['success'] == true && data['drawnLotto'] != null) {
+          String lottoNumber = data['drawnLotto']['lotto_number'];
+          setState(() {
+            for (int i = 0; i < 6; i++) {
+              _controllers[categoryIndex][i].text = lottoNumber[i];
+            }
+            _isDrawn[categoryIndex] = true;
+          });
+        } else {
+          throw Exception('รูปแบบการตอบกลับไม่ถูกต้องหรือไม่มีการสุ่มหมายเลข');
+        }
+      } else if (response.statusCode == 400) {
+        final Map<String, dynamic> errorData = json.decode(response.body);
+        throw Exception(errorData['message'] ?? 'การสุ่มหมายเลขล้มเหลว');
+      } else {
+        throw Exception(
+            'การสุ่มหมายเลขล้มเหลว รหัสสถานะ: ${response.statusCode}');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ข้อผิดพลาด: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _saveAllDrawnNumbers() async {
+    if (_isSaved) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('หมายเลขทั้งหมดถูกบันทึกไปแล้ว')),
+      );
+      return;
+    }
+
+    int drawnCount = _isDrawn.where((drawn) => drawn).length;
+    if (drawnCount < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('กรุณาสุ่มหมายเลขให้ครบทั้ง 5 รางวัลก่อนบันทึก')),
+      );
+      return;
+    }
+
+    List<Map<String, dynamic>> drawnNumbers = [];
+    for (int i = 0; i < 5; i++) {
+      String drawnNumber =
+          _controllers[i].map((controller) => controller.text).join();
+      drawnNumbers.add({
+        'categoryIndex': i,
+        'drawnNumber': drawnNumber,
+      });
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+            '$url/admin/save-drawn-numbers'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode({'drawnNumbers': drawnNumbers}),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _isSaved = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('บันทึกหมายเลขที่สุ่มทั้งหมดสำเร็จ')),
+        );
+      } else {
+        throw Exception('การบันทึกหมายเลขล้มเหลว');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('ข้อผิดพลาดในการบันทึกหมายเลข: ${e.toString()}')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (int i = 0; i < 5; i++)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Container(
+              height: 150,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey,
+                    offset: const Offset(1, 2),
+                    blurRadius: 3,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Container(
+                      alignment: Alignment.centerLeft,
+                      height: 30,
+                      child: Text(
+                        "รางวัลที่ ${i + 1}",
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: Color.fromRGBO(0, 133, 255, 10),
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    Container(
+                      height: 50,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(6, (index) {
+                          return Container(
+                            height: 40,
+                            width: 40,
+                            margin: EdgeInsets.symmetric(horizontal: 5),
+                            child: TextField(
+                              controller: _controllers[i][index],
+                              keyboardType: TextInputType.number,
+                              maxLength: 1,
+                              textAlign: TextAlign.center,
+                              cursorColor: Colors.black,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                counterText: '',
+                                border: OutlineInputBorder(),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: const Color.fromARGB(255, 0, 0, 0),
+                                      width: 2.0),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: Colors.grey, width: 1.0),
+                                ),
+                                contentPadding:
+                                    EdgeInsets.symmetric(vertical: 8),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => _drawNumberFromAPI(i),
+                      child: Container(
+                        width: 120,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: _isDrawn[i]
+                              ? Colors.grey
+                              : Color.fromRGBO(0, 175, 12, 10),
+                          borderRadius: BorderRadius.circular(5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.shade600,
+                              offset: const Offset(2, 2),
+                              blurRadius: 2,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          _isDrawn[i] ? "สุ่มแล้ว" : "สุ่มตัวเลข",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: GestureDetector(
+            onTap: _saveAllDrawnNumbers,
+            child: Container(
+              width: double.infinity,
+              height: 50,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _isSaved ? Colors.grey : Colors.blue,
+                borderRadius: BorderRadius.circular(5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade600,
+                    offset: const Offset(2, 2),
+                    blurRadius: 2,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Text(
+                _isSaved ? "บันทึกแล้ว" : "บันทึกทั้งหมด",
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

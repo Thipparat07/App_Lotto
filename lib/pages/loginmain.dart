@@ -63,6 +63,7 @@ class _LoginmainState extends State<Loginmain> {
                     fontWeight: FontWeight.bold,
                     color:
                         Colors.white, // ใช้สีใดก็ได้เพื่อให้ข้อความไม่ใช่สีดำ
+                        fontFamily: 'Aleo'
                   ),
                 ),
               ),
@@ -78,7 +79,8 @@ class _LoginmainState extends State<Loginmain> {
                 style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w500,
-                    color: Color.fromARGB(255, 159, 159, 159)),
+                    color: Color.fromARGB(255, 159, 159, 159),
+                    fontFamily: 'Aleo'),
               ),
             ),
             Container(
@@ -329,7 +331,6 @@ class _LoginmainState extends State<Loginmain> {
     }
 
     var data = {"email": emailValue, "password": passwordValue};
-
     http
         .post(Uri.parse("$url/customers/login"),
             headers: {"Content-Type": "application/json; charset=utf-8"},
@@ -344,11 +345,11 @@ class _LoginmainState extends State<Loginmain> {
       log(customersloginPostResponse.userId.toString());
       log(customersloginPostResponse.status.toString());
 
-      if (customersloginPostResponse.status.toString() == '0') {
+      if (customersloginPostResponse.status.toInt() == 0) {
         Get.to(() => adminMainPage(uid: customersloginPostResponse.userId.toInt()),
             transition: Transition.circularReveal,
             duration: const Duration(seconds: 2));
-      } else if (customersloginPostResponse.status.toString() == '1') {
+      } else if (customersloginPostResponse.status.toInt() == 1) {
         Get.to(() => MainPageLotto(uid: customersloginPostResponse.userId.toInt()),
             transition: Transition.circularReveal,
             duration: const Duration(seconds: 2));
