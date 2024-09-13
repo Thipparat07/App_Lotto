@@ -9,7 +9,8 @@ import 'package:project_01/pages/showLottoAdmin.dart';
 import 'package:project_01/pages/userList.dart';
 
 class adminMainPage extends StatefulWidget {
-  const adminMainPage({super.key});
+  int uid = 0;
+  adminMainPage({super.key, required this.uid});
 
   @override
   State<adminMainPage> createState() => _adminMainPageState();
@@ -136,7 +137,7 @@ class _adminMainPageState extends State<adminMainPage> {
                                               log("examine");
                                               Get.to(
                                                   () =>
-                                                      const showLottoAdminPage(),
+                                                       showLottoAdminPage(uid: widget.uid,),
                                                   transition:
                                                       Transition.circularReveal,
                                                   duration: const Duration(
@@ -178,7 +179,7 @@ class _adminMainPageState extends State<adminMainPage> {
                                           GestureDetector(
                                             onTap: () {
                                               log("User");
-                                              Get.to(() => const userListPage(),
+                                              Get.to(() => userListPage(uid: widget.uid,),
                                                   transition:
                                                       Transition.circularReveal,
                                                   duration: const Duration(
@@ -222,7 +223,7 @@ class _adminMainPageState extends State<adminMainPage> {
                                               log("ProfileAdmin");
                                               Get.to(
                                                   () =>
-                                                      const adminProfilePage(),
+                                               adminProfilePage(uid: widget.uid,),
                                                   transition:
                                                       Transition.circularReveal,
                                                   duration: const Duration(

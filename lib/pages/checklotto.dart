@@ -8,7 +8,8 @@ import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 
 class checkLottoPage extends StatefulWidget {
-  const checkLottoPage({super.key});
+    int uid = 0;
+  checkLottoPage({super.key, required this.uid});
 
   @override
   State<checkLottoPage> createState() => _checkLottoPageState();
@@ -69,7 +70,7 @@ class _checkLottoPageState extends State<checkLottoPage> {
                             height: 25,
                             child: GestureDetector(
                                 onTap: () {
-                                  Get.to(() => const MainPageLotto(),
+                                  Get.to(() =>  MainPageLotto(uid: widget.uid,),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },

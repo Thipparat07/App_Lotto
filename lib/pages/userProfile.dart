@@ -1,16 +1,20 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/get_navigation.dart';
 import 'package:get/get_navigation/src/routes/transitions_type.dart';
+import 'package:project_01/config/config.dart';
 import 'package:project_01/pages/login.dart';
 import 'package:project_01/pages/mainPage.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
+import 'package:http/http.dart' as http;
 
 class Userprofile extends StatefulWidget {
-  const Userprofile({super.key});
+              int uid = 0;
+  Userprofile({super.key, required this.uid});
 
   @override
   State<Userprofile> createState() => _UserprofileState();
@@ -19,6 +23,22 @@ class Userprofile extends StatefulWidget {
 var _isObscure = true;
 
 class _UserprofileState extends State<Userprofile> {
+  String url = '';
+  int userId = 1; // Example user ID
+  Map<String, dynamic> userData = {}; // To store the user data
+
+  @override
+  void initState() {
+    super.initState();
+    Configuration.getConfig().then((config) {
+      setState(() {
+        url = config[
+            'apiEndpoint']; // Ensure setState is called to rebuild with new URL
+      });
+      log('API URL set to: $url');
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,7 +80,7 @@ class _UserprofileState extends State<Userprofile> {
                             height: 25,
                             child: GestureDetector(
                                 onTap: () {
-                                  Get.to(() => const MainPageLotto(),
+                                  Get.to(() => MainPageLotto(uid: widget.uid,),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
@@ -532,4 +552,42 @@ class _UserprofileState extends State<Userprofile> {
         title: "ออกจากระบบเสร็จสิ้น",
         type: QuickAlertType.success);
   }
+
+  Future<void> fetchUserData(int userId) async {
+  if (url.isEmpty) {
+    log('API URL ยังไม่ถูกตั้งค่า.');
+    return;
+  }
+
+  final apiUrl = '$url/customers/$userId';
+  log('ส่งคำขอ GET ไปที่: $apiUrl');
+
+  try {
+    final response = await http.get(
+      Uri.parse(apiUrl),
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+      },
+    );
+
+    log('ได้รับการตอบกลับด้วยรหัสสถานะ: ${response.statusCode}');
+    log('เนื้อหาการตอบกลับ: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = jsonDecode(response.body);
+      log('ข้อมูลผู้ใช้ที่แยกออกมา: $responseData');
+
+      setState(() {
+        userData = responseData;
+      });
+
+      log("ข้อมูลผู้ใช้ได้รับการอัปเดตในสถานะแล้ว.");
+    } else {
+      log('คำขอล้มเหลวด้วยสถานะ: ${response.statusCode}, เนื้อหา: ${response.body}');
+    }
+  } catch (e) {
+    log('ข้อผิดพลาดระหว่างการ fetchUserData: $e');
+  }
+}
+
 }

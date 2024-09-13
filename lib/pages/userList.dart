@@ -9,7 +9,8 @@ import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 
 class userListPage extends StatefulWidget {
-  const userListPage({super.key});
+  int uid = 0;
+  userListPage({super.key, required this.uid});
 
   @override
   State<userListPage> createState() => _userListPageState();
@@ -55,7 +56,10 @@ class _userListPageState extends State<userListPage> {
                             child: GestureDetector(
                                 onTap: () => {
                                       log("Back to..."),
-                                      Get.to(() => const adminMainPage(),
+                                      Get.to(
+                                          () => adminMainPage(
+                                                uid: widget.uid,
+                                              ),
                                           transition: Transition.circularReveal,
                                           duration: const Duration(seconds: 2))
                                     },
@@ -95,7 +99,7 @@ class _userListPageState extends State<userListPage> {
             GestureDetector(
               onTap: () {
                 log("User...");
-                Get.to(() => const seeUserPage(),
+                Get.to(() => seeUserPage(uid: widget.uid,),
                     transition: Transition.circularReveal,
                     duration: const Duration(seconds: 2));
               },

@@ -9,7 +9,8 @@ import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 
 class seeUserPage extends StatefulWidget {
-  const seeUserPage({super.key});
+  int uid = 0;
+   seeUserPage({super.key, required this.uid});
 
   @override
   State<seeUserPage> createState() => _seeUserPageState();
@@ -59,7 +60,7 @@ class _seeUserPageState extends State<seeUserPage> {
                             height: 25,
                             child: GestureDetector(
                                 onTap: () {
-                                  Get.to(() => const userListPage(),
+                                  Get.to(() => userListPage(uid: widget.uid,),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
@@ -479,7 +480,7 @@ class _seeUserPageState extends State<seeUserPage> {
                                       onTap: () {
                                         log("ยืนยันการลบข้อมูล");
                                         showAlert();
-                                        Get.to(() => const userListPage(),
+                                        Get.to(() => userListPage(uid: widget.uid,),
                                             transition: Transition.fadeIn,
                                             duration:
                                                 const Duration(seconds: 7));

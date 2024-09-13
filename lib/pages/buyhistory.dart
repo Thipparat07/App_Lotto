@@ -8,7 +8,8 @@ import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 
 class buyHistoryPage extends StatefulWidget {
-  const buyHistoryPage({super.key});
+  int uid = 0;
+  buyHistoryPage({super.key, required this.uid});
 
   @override
   State<buyHistoryPage> createState() => _buyHistoryPageState();
@@ -54,7 +55,7 @@ class _buyHistoryPageState extends State<buyHistoryPage> {
                             child: GestureDetector(
                                 onTap: () => {
                                       log("Back to..."),
-                                      Get.to(() => const findLottoPage(),
+                                      Get.to(() => findLottoPage(uid: widget.uid,),
                                           transition: Transition.circularReveal,
                                           duration: const Duration(seconds: 2))
                                     },

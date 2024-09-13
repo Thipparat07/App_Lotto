@@ -12,7 +12,8 @@ import 'package:project_01/pages/wallet.dart';
 import 'package:http/http.dart' as http;
 
 class MainPageLotto extends StatefulWidget {
-  const MainPageLotto({super.key});
+  int uid = 0;
+  MainPageLotto({super.key, required this.uid});
 
   @override
   State<MainPageLotto> createState() => _MainPageLottoState();
@@ -77,6 +78,7 @@ class _MainPageLottoState extends State<MainPageLotto> {
 
   @override
   Widget build(BuildContext context) {
+    log('Customer id: ${widget.uid}');
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -191,7 +193,7 @@ class _MainPageLottoState extends State<MainPageLotto> {
                                           GestureDetector(
                                             onTap: () {
                                               print("Account");
-                                              Get.to(() => const WalletPage(),
+                                              Get.to(() => WalletPage(uid: widget.uid,),
                                                   transition:
                                                       Transition.circularReveal,
                                                   duration: const Duration(
@@ -245,7 +247,7 @@ class _MainPageLottoState extends State<MainPageLotto> {
                                             onTap: () {
                                               print("examine");
                                               Get.to(
-                                                  () => const checkLottoPage(),
+                                                  () => checkLottoPage(uid: widget.uid,),
                                                   transition:
                                                       Transition.circularReveal,
                                                   duration: const Duration(
@@ -299,7 +301,7 @@ class _MainPageLottoState extends State<MainPageLotto> {
                                             onTap: () {
                                               print("SearchLotto...");
                                               Get.to(
-                                                  () => const findLottoPage(),
+                                                  () => findLottoPage(uid: widget.uid,),
                                                   transition:
                                                       Transition.circularReveal,
                                                   duration: const Duration(
@@ -352,7 +354,7 @@ class _MainPageLottoState extends State<MainPageLotto> {
                                           GestureDetector(
                                             onTap: () {
                                               print("ProfileUser...");
-                                              Get.to(() => const Userprofile(),
+                                              Get.to(() => Userprofile(uid: widget.uid,),
                                                   transition:
                                                       Transition.circularReveal,
                                                   duration: const Duration(
@@ -905,7 +907,7 @@ class _MainPageLottoState extends State<MainPageLotto> {
               child: GestureDetector(
                 onTap: () {
                   print("ButLotto page...");
-                  Get.to(() => const findLottoPage(),
+                  Get.to(() =>  findLottoPage(uid: widget.uid,),
                       transition: Transition.circularReveal,
                       duration: const Duration(seconds: 2));
                 },

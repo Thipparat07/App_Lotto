@@ -345,11 +345,11 @@ class _LoginmainState extends State<Loginmain> {
       log(customersloginPostResponse.status.toString());
 
       if (customersloginPostResponse.status.toString() == '0') {
-        Get.to(() => const adminMainPage(),
+        Get.to(() => adminMainPage(uid: customersloginPostResponse.userId.toInt()),
             transition: Transition.circularReveal,
             duration: const Duration(seconds: 2));
       } else if (customersloginPostResponse.status.toString() == '1') {
-        Get.to(() => const MainPageLotto(),
+        Get.to(() => MainPageLotto(uid: customersloginPostResponse.userId.toInt()),
             transition: Transition.circularReveal,
             duration: const Duration(seconds: 2));
       } else {

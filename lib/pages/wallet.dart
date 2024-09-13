@@ -6,7 +6,8 @@ import 'package:get/get_navigation/get_navigation.dart';
 import 'package:project_01/pages/mainPage.dart';
 
 class WalletPage extends StatefulWidget {
-  const WalletPage({super.key});
+  int uid = 0;
+   WalletPage({super.key, required this.uid});
 
   @override
   State<WalletPage> createState() => _WalletPageState();
@@ -15,6 +16,7 @@ class WalletPage extends StatefulWidget {
 class _WalletPageState extends State<WalletPage> {
   @override
   Widget build(BuildContext context) {
+    log('Customer id: ${widget.uid}');
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -36,7 +38,7 @@ class _WalletPageState extends State<WalletPage> {
                             child: GestureDetector(
                                 onTap: () {
                                   log("Back to...");
-                                  Get.to(() => const MainPageLotto(),
+                                  Get.to(() =>  MainPageLotto(uid: widget.uid,),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },

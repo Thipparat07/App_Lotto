@@ -9,7 +9,8 @@ import 'package:project_01/pages/lottoList.dart';
 import 'package:project_01/pages/mainPage.dart';
 
 class findLottoPage extends StatefulWidget {
-  const findLottoPage({super.key});
+  int uid = 0;
+  findLottoPage({super.key, required this.uid});
 
   @override
   State<findLottoPage> createState() => _findLottoPageState();
@@ -58,7 +59,7 @@ class _findLottoPageState extends State<findLottoPage> {
                             child: GestureDetector(
                                 onTap: () {
                                   log("Back to...");
-                                  Get.to(() => const MainPageLotto(),
+                                  Get.to(() => MainPageLotto(uid: widget.uid,),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
@@ -136,7 +137,7 @@ class _findLottoPageState extends State<findLottoPage> {
                               child: GestureDetector(
                                 onTap: () {
                                   log("To page cart...");
-                                  Get.to(() => const lottoListPage(),
+                                  Get.to(() => lottoListPage(uid: widget.uid,),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
@@ -179,7 +180,7 @@ class _findLottoPageState extends State<findLottoPage> {
                               child: GestureDetector(
                                 onTap: () {
                                   log("To histo lotto...");
-                                  Get.to(() => const buyHistoryPage(),
+                                  Get.to(() => buyHistoryPage(uid: widget.uid,),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },

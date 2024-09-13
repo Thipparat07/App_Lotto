@@ -7,7 +7,8 @@ import 'package:project_01/pages/findLotto.dart';
 import 'package:quickalert/quickalert.dart';
 
 class lottoListPage extends StatefulWidget {
-  const lottoListPage({super.key});
+  int uid = 0;
+  lottoListPage({super.key, required this.uid});
 
   @override
   State<lottoListPage> createState() => _lottoListPageState();
@@ -52,7 +53,7 @@ class _lottoListPageState extends State<lottoListPage> {
                             child: GestureDetector(
                                 onTap: () => {
                                       log("Back to..."),
-                                      Get.to(() => const findLottoPage(),
+                                      Get.to(() =>  findLottoPage(uid: widget.uid,),
                                           transition: Transition.circularReveal,
                                           duration: const Duration(seconds: 2))
                                     },
