@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:developer';
+import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/get_navigation.dart';
+import 'package:project_01/config/config.dart';
 import 'package:project_01/pages/buyhistory.dart';
 import 'package:project_01/pages/lottoList.dart';
 import 'package:project_01/pages/mainPage.dart';
@@ -17,8 +20,165 @@ class findLottoPage extends StatefulWidget {
 }
 
 class _findLottoPageState extends State<findLottoPage> {
-  final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
+  List<TextEditingController> _controllers = [];
+  List<dynamic>? searchResults;
+  bool isLoading = false;
+  String searchType = 'full';
+  String url = '';
+
+  @override
+  void initState() {
+    super.initState();
+    Configuration.getConfig().then(
+      (config) {
+        url = config['apiEndpoint'] ?? '';
+      },
+    );
+    _initializeControllers();
+  }
+
+  @override
+void dispose() {
+  for (var controller in _controllers) {
+    controller.dispose();
+  }
+  super.dispose();
+}
+
+
+Future<void> addToBasket(String lottoNumber, int price) async {
+  try {
+    final url1 = Uri.parse('$url/basket/add');
+    final response = await http.post(
+      url1,
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'lotto_id': lottoNumber,
+        'price': price,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      // Successfully added to basket
+      print('Added to basket');
+    } else {
+      // Handle errors
+      print('Failed to add to basket: ${response.body}');
+    }
+  } catch (e) {
+    // Handle network errors
+    print('Error: $e');
+  }
+}
+
+  void _initializeControllers() {
+    _controllers = List.generate(6, (_) => TextEditingController());
+  }
+
+  Future<void> searchLottery(String numbers, String type) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http
+          .get(Uri.parse('$url/lotto/search?number=$numbers&type=$type'));
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success']) {
+          setState(() {
+            searchResults = jsonResponse['data'];
+          });
+        } else {
+          setState(() {
+            searchResults = [];
+          });
+        }
+      } else {
+        throw Exception('Failed to load lottery data');
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('เกิดข้อผิดพลาดในการค้นหา กรุณาลองใหม่อีกครั้ง')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> generateRandomNumber() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response =
+          await http.get(Uri.parse('$url/lotto/random-lotto?type=$searchType'));
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['success']) {
+          String randomNumber = jsonResponse['data']['lotto_number'];
+          setState(() {
+            if (searchType == 'front') {
+              randomNumber = randomNumber.substring(0, 3);
+            } else if (searchType == 'back') {
+              randomNumber = randomNumber.substring(randomNumber.length - 3);
+            }
+            // Clear all fields first
+            clearFields();
+            // Then fill with the new random number
+            for (int i = 0; i < randomNumber.length; i++) {
+              _controllers[i].text = randomNumber[i];
+            }
+          });
+        } else {
+          throw Exception('Failed to get random number');
+        }
+      } else {
+        throw Exception('Failed to load random number');
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('เกิดข้อผิดพลาดในการสุ่มตัวเลข กรุณาลองใหม่อีกครั้ง')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void findNum() {
+    int fieldsToUse = searchType == 'full' ? 6 : 3;
+    String combinedString = _controllers
+        .take(fieldsToUse)
+        .map((controller) => controller.text)
+        .join('');
+    if (combinedString.length == fieldsToUse) {
+      searchLottery(combinedString, searchType);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('กรุณากรอกตัวเลขให้ครบ ${fieldsToUse} หลัก')),
+      );
+    }
+  }
+
+  void clearFields() {
+    for (var controller in _controllers) {
+      controller.clear();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +219,10 @@ class _findLottoPageState extends State<findLottoPage> {
                             child: GestureDetector(
                                 onTap: () {
                                   log("Back to...");
-                                  Get.to(() => MainPageLotto(uid: widget.uid,),
+                                  Get.to(
+                                      () => MainPageLotto(
+                                            uid: widget.uid,
+                                          ),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
@@ -85,14 +248,14 @@ class _findLottoPageState extends State<findLottoPage> {
               ),
             ),
             Container(
-              margin: EdgeInsets.symmetric(vertical: 5),
+              margin: const EdgeInsets.symmetric(vertical: 5),
               height: 40,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
                     alignment: Alignment.centerRight,
-                    child: Text(
+                    child: const Text(
                       "Welcome To ",
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -100,7 +263,7 @@ class _findLottoPageState extends State<findLottoPage> {
                   ),
                   Container(
                     alignment: Alignment.centerLeft,
-                    child: Text(" LOTTO",
+                    child: const Text(" LOTTO",
                         style: TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
@@ -108,23 +271,23 @@ class _findLottoPageState extends State<findLottoPage> {
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
                 height: 200,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
+                  boxShadow: const [
                     BoxShadow(
                       color: Colors.grey,
-                      offset: const Offset(1, 2), // ย้ายเงาเฉพาะในแนวดิ่ง
+                      offset: Offset(1, 2), // ย้ายเงาเฉพาะในแนวดิ่ง
                       blurRadius: 3, // เบลอเงา
                       spreadRadius: 0, // ไม่มีการขยายเงา
                     ),
                   ],
                 ),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -137,17 +300,21 @@ class _findLottoPageState extends State<findLottoPage> {
                               child: GestureDetector(
                                 onTap: () {
                                   log("To page cart...");
-                                  Get.to(() => lottoListPage(uid: widget.uid,),
+                                  Get.to(
+                                      () => lottoListPage(
+                                            uid: widget.uid,
+                                          ),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
                                 child: Padding(
-                                  padding: EdgeInsets.symmetric(
+                                  padding: const EdgeInsets.symmetric(
                                       horizontal: 7, vertical: 1),
                                   child: Container(
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
-                                      color: Color.fromRGBO(0, 175, 12, 10),
+                                      color:
+                                          const Color.fromRGBO(0, 175, 12, 10),
                                       borderRadius: BorderRadius.circular(5),
                                       boxShadow: [
                                         BoxShadow(
@@ -159,7 +326,7 @@ class _findLottoPageState extends State<findLottoPage> {
                                         ),
                                       ],
                                     ),
-                                    child: Text(
+                                    child: const Text(
                                       "รายการคำสั่งซื้อ",
                                       style: TextStyle(
                                         fontSize: 16,
@@ -180,12 +347,15 @@ class _findLottoPageState extends State<findLottoPage> {
                               child: GestureDetector(
                                 onTap: () {
                                   log("To histo lotto...");
-                                  Get.to(() => buyHistoryPage(uid: widget.uid,),
+                                  Get.to(
+                                      () => buyHistoryPage(
+                                            uid: widget.uid,
+                                          ),
                                       transition: Transition.circularReveal,
                                       duration: const Duration(seconds: 2));
                                 },
                                 child: Padding(
-                                  padding: EdgeInsets.symmetric(
+                                  padding: const EdgeInsets.symmetric(
                                       horizontal: 7, vertical: 1),
                                   child: Container(
                                     alignment: Alignment.center,
@@ -203,7 +373,7 @@ class _findLottoPageState extends State<findLottoPage> {
                                         ),
                                       ],
                                     ),
-                                    child: Text(
+                                    child: const Text(
                                       "ประวัติการสั่งซื้อ",
                                       style: TextStyle(
                                         fontSize: 16,
@@ -225,10 +395,10 @@ class _findLottoPageState extends State<findLottoPage> {
                       ),
                       Container(
                         height: 50,
-                        // color: const Color.fromARGB(255, 52, 7, 255),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(6, (index) {
+                          children: List.generate(searchType == 'full' ? 6 : 3,
+                              (index) {
                             return Container(
                               height: 40,
                               width: 40,
@@ -238,43 +408,35 @@ class _findLottoPageState extends State<findLottoPage> {
                                 keyboardType: TextInputType.number,
                                 maxLength: 1,
                                 textAlign: TextAlign.center,
-                                cursorColor:
-                                    Colors.black, // เปลี่ยนเป็นสีที่คุณต้องการ
+                                cursorColor: Colors.black,
                                 decoration: InputDecoration(
                                   counterText: '',
                                   border: OutlineInputBorder(),
                                   focusedBorder: OutlineInputBorder(
                                     borderSide: BorderSide(
-                                        color:
-                                            const Color.fromARGB(255, 0, 0, 0),
-                                        width:
-                                            2.0), // สีและความหนาของ border เมื่อ focus
+                                      color: const Color.fromARGB(255, 0, 0, 0),
+                                      width: 2.0,
+                                    ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderSide: BorderSide(
-                                        color: Colors.grey,
-                                        width:
-                                            1.0), // สีและความหนาของ border เมื่อไม่มี focus
+                                      color: Colors.grey,
+                                      width: 1.0,
+                                    ),
                                   ),
-                                  contentPadding: EdgeInsets.symmetric(
-                                      vertical:
-                                          8), // เพิ่ม padding แนวตั้งเพื่อให้ข้อความอยู่กลาง
+                                  contentPadding:
+                                      EdgeInsets.symmetric(vertical: 8),
                                 ),
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                   LengthLimitingTextInputFormatter(1),
                                 ],
                                 onChanged: (value) {
-                                  if (value.isNotEmpty) {
-                                    if (index < 5) {
-                                      // ถ้าค่ามีและ index ไม่ใช่ช่องสุดท้าย ให้ไปที่ช่องถัดไป
-                                      FocusScope.of(context).nextFocus();
-                                    }
-                                  } else {
-                                    if (index > 0) {
-                                      // ถ้าค่าที่กรอกหายไปและ index ไม่ใช่ช่องแรก ให้กลับไปที่ช่องก่อนหน้า
-                                      FocusScope.of(context).previousFocus();
-                                    }
+                                  if (value.isNotEmpty &&
+                                      index < (searchType == 'full' ? 5 : 2)) {
+                                    FocusScope.of(context).nextFocus();
+                                  } else if (value.isEmpty && index > 0) {
+                                    FocusScope.of(context).previousFocus();
                                   }
                                 },
                               ),
@@ -282,112 +444,145 @@ class _findLottoPageState extends State<findLottoPage> {
                           }),
                         ),
                       ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Radio(
+                            value: 'front',
+                            groupValue: searchType,
+                            onChanged: (value) {
+                              setState(() {
+                                searchType = value.toString();
+                                clearFields();
+                              });
+                            },
+                          ),
+                          Text('3 ตัวหน้า'),
+                          Radio(
+                            value: 'back',
+                            groupValue: searchType,
+                            onChanged: (value) {
+                              setState(() {
+                                searchType = value.toString();
+                                clearFields();
+                              });
+                            },
+                          ),
+                          Text('3 ตัวหลัง'),
+                          Radio(
+                            value: 'full',
+                            groupValue: searchType,
+                            onChanged: (value) {
+                              setState(() {
+                                searchType = value.toString();
+                                clearFields();
+                              });
+                            },
+                          ),
+                          Text('เลขทั้งหมด'),
+                        ],
+                      ),
                       Container(
                         height: 50,
                         child: Row(
                           children: [
                             Expanded(
-                                child: Container(
                               child: Row(
                                 children: [
                                   Expanded(
-                                      child: GestureDetector(
-                                    onTap: () {
-                                      log("Random number");
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 5, vertical: 7),
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color:
-                                              Color.fromRGBO(217, 217, 217, 10),
-                                          borderRadius:
-                                              BorderRadius.circular(5),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.grey.shade600,
-                                              offset: const Offset(2,
-                                                  2), // ย้ายเงาเฉพาะในแนวดิ่ง
-                                              blurRadius: 2, // เบลอเงา
-                                              spreadRadius:
-                                                  0, // ไม่มีการขยายเงา
-                                            ),
-                                          ],
+                                    child: GestureDetector(
+                                      onTap: generateRandomNumber,
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 5, vertical: 7),
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: Color.fromRGBO(
+                                                217, 217, 217, 10),
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.grey.shade600,
+                                                offset: const Offset(2, 2),
+                                                blurRadius: 2,
+                                                spreadRadius: 0,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Text("สุ่มตัวเลข",
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
                                         ),
-                                        child: Text("สุ่มตัวเลข",
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold)),
                                       ),
                                     ),
-                                  )),
+                                  ),
                                   Expanded(
-                                      child: GestureDetector(
-                                    onTap: () {
-                                      log("Clear number");
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 5, vertical: 7),
-                                      child: Container(
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color:
-                                              Color.fromRGBO(0, 133, 255, 10),
-                                          borderRadius:
-                                              BorderRadius.circular(5),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.grey.shade600,
-                                              offset: const Offset(2,
-                                                  2), // ย้ายเงาเฉพาะในแนวดิ่ง
-                                              blurRadius: 2, // เบลอเงา
-                                              spreadRadius:
-                                                  0, // ไม่มีการขยายเงา
-                                            ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          "ล้างค่า",
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white),
+                                    child: GestureDetector(
+                                      onTap: clearFields,
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 5, vertical: 7),
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Color.fromRGBO(0, 133, 255, 10),
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.grey.shade600,
+                                                offset: const Offset(2, 2),
+                                                blurRadius: 2,
+                                                spreadRadius: 0,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Text(
+                                            "ล้างค่า",
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  )),
+                                  ),
                                 ],
                               ),
-                            )),
+                            ),
                             Expanded(
-                                child: GestureDetector(
-                              onTap: findNum,
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 7),
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: Color.fromRGBO(0, 133, 255, 10),
-                                    borderRadius: BorderRadius.circular(5),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.shade600,
-                                        offset: const Offset(
-                                            2, 2), // ย้ายเงาเฉพาะในแนวดิ่ง
-                                        blurRadius: 2, // เบลอเงา
-                                        spreadRadius: 0, // ไม่มีการขยายเงา
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text("ค้นหา",
+                              child: GestureDetector(
+                                onTap: findNum,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 7),
+                                  child: Container(
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: Color.fromRGBO(0, 133, 255, 10),
+                                      borderRadius: BorderRadius.circular(5),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.shade600,
+                                          offset: const Offset(2, 2),
+                                          blurRadius: 2,
+                                          spreadRadius: 0,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      "ค้นหา",
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.white)),
+                                          color: Colors.white),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            )),
+                            ),
                           ],
                         ),
                       ),
@@ -397,12 +592,12 @@ class _findLottoPageState extends State<findLottoPage> {
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Container(
-                margin: EdgeInsets.symmetric(vertical: 10),
+                margin: const EdgeInsets.symmetric(vertical: 10),
                 height: 40,
                 alignment: Alignment.centerLeft,
-                child: Text(
+                child: const Text(
                   "ผลการค้นหา",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
@@ -411,347 +606,69 @@ class _findLottoPageState extends State<findLottoPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
-                height: 100,
+                height: searchResults != null ? 300 : 100,
                 decoration: const BoxDecoration(
                   color: Color.fromARGB(248, 199, 229, 255),
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(10),
-                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey,
-                      offset: const Offset(2, 2), // ย้ายเงาเฉพาะในแนวดิ่ง
-                      blurRadius: 2, // เบลอเงา
-                      spreadRadius: 0, // ไม่มีการขยายเงา
+                      offset: Offset(2, 2),
+                      blurRadius: 2,
+                      spreadRadius: 0,
                     ),
                   ],
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                        child: Container(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            height: 17,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  alignment: Alignment.center,
-                                  width: 50,
-                                  child: const Text(
-                                    "เลขหน้า",
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                Container(
-                                  alignment: Alignment.center,
-                                  width: 35,
-                                  child: Text(
-                                    "XXX",
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade700),
-                                  ),
-                                ),
-                                Container(
-                                  alignment: Alignment.center,
-                                  width: 50,
-                                  child: const Text(
-                                    "ประเภท",
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    "ชุด",
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade700),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 2),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 40,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: const BorderRadius.all(
-                                  Radius.circular(10),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.shade500,
-                                    offset: const Offset(
-                                        0, 1), // ย้ายเงาเฉพาะในแนวดิ่ง
-                                    blurRadius: 10, // เบลอเงา
-                                    spreadRadius: 0, // ไม่มีการขยายเงา
-                                  ),
-                                ],
-                              ),
-                              child: const Text(
-                                "XXXXXX",
-                                style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color.fromRGBO(0, 133, 255, 10)),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            height: 17,
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 10),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                      child: Container(
-                                    alignment: Alignment.centerRight,
-                                    child: Text(
-                                      "ล็อตเตอรี่ By ",
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade700,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  )),
-                                  Expanded(
-                                      child: Container(
-                                    alignment: Alignment.centerLeft,
-                                    child: const Text(" LOTTO"),
-                                  )),
-                                ],
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    )),
-                    Expanded(
-                        child: Container(
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      "จำนวน  ",
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  Container(
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      "XXX",
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                  ),
-                                  Container(
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      "   ชุด",
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceAround,
-                                children: [
-                                  Container(
-                                    alignment: Alignment.center,
-                                    width: 35,
-                                    child: const Text(
-                                      "เลือก",
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 2),
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      width: 60,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(10),
-                                        ),
-                                      ),
-                                      child: const Text("1"),
-                                    ),
-                                  ),
-                                  Container(
-                                    alignment: Alignment.center,
-                                    width: 20,
-                                    child: const Text(
-                                      "ใบ",
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      log("Add");
-                                    },
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      width: 25,
-                                      decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white,
-                                          image: DecorationImage(
-                                              image: AssetImage(
-                                                  "assets/images/addbtn.png"))),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      log("Remove");
-                                    },
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      width: 25,
-                                      decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white,
-                                          image: DecorationImage(
-                                              image: AssetImage(
-                                                  "assets/images/removebtn.png"))),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    alignment: Alignment.center,
-                                    width: 35,
-                                    child: const Text(
-                                      "ราคา",
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 2),
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      width: 80,
-                                      decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(10),
-                                        ),
-                                      ),
-                                      child: const Text("XXXX"),
-                                    ),
-                                  ),
-                                  Container(
-                                    alignment: Alignment.center,
-                                    width: 25,
-                                    child: const Text(
-                                      "บาท",
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      log("AddItem");
-                                    },
-                                    child: Container(
-                                      alignment: Alignment.center,
-                                      width: 25,
-                                      decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          image: DecorationImage(
-                                              image: AssetImage(
-                                                  "assets/images/cart.png"))),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )),
-                  ],
-                ),
+                child: isLoading
+    ? const Center(child: CircularProgressIndicator())
+    : searchResults != null
+        ? searchResults!.isEmpty
+            ? const Center(child: Text('ไม่พบสลากที่ตรงกับเงื่อนไขการค้นหา'))
+            : ListView.builder(
+                itemCount: searchResults!.length,
+                itemBuilder: (context, index) {
+                  final lotto = searchResults![index];
+                  bool _isButtonDisabled = false;
+
+                  return ListTile(
+                    title: Text('เลขที่: ${lotto['lotto_id']}'),
+                    subtitle: Text('ราคา: ${lotto['price']} บาท'),
+                    trailing: ElevatedButton(
+                      child: const Text('เพิ่มลงตะกร้า'),
+                      onPressed: _isButtonDisabled
+                          ? null
+                          : () async {
+                              setState(() {
+                                _isButtonDisabled = true;
+                              });
+                              final lottoNumber = lotto['lotto_id'];
+                              final price = lotto['price'];
+                              final response = await addToBasket(lottoNumber, price);
+                              setState(() {
+                                _isButtonDisabled = false;
+                              });
+
+                              // if () {
+                              //   ScaffoldMessenger.of(context).showSnackBar(
+                              //     SnackBar(content: Text('Item added to basket')),
+                              //   );
+                              // } else {
+                              //   ScaffoldMessenger.of(context).showSnackBar(
+                              //     SnackBar(content: Text('Failed to add item')),
+                              //   );
+                              // }
+                            },
+                    ),
+                  );
+                },
+              )
+        : const Center(child: Text('กรุณากรอกเลขที่ต้องการค้นหา')),
+
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  //           ******ยังไม่เสร็จสมบูรณ์ถ้าเลขซ้ำมีนจะแสดงแค่อันเดียว (มันเก็บตัวเลขซ้ำ) ต้องเป็นเลขไม่ซ้ำ
-  void findNum() {
-    // สร้าง Set เพื่อเก็บค่าที่ไม่ซ้ำกัน
-    Set<String> uniqueNumbers = {};
-
-    // เพิ่มค่าที่กรอกเข้ามาจากแต่ละ TextEditingController ไปยัง Set
-    for (var controller in _controllers) {
-      String input = controller.text;
-
-      if (input.isNotEmpty) {
-        uniqueNumbers.add(input);
-      }
-    }
-
-    // รวมค่าที่ไม่ซ้ำกันเป็นสตริงเดียว
-    String combinedString = uniqueNumbers.join('');
-
-    // แสดงผลใน log
-    log("Input numbers: $combinedString");
   }
 }

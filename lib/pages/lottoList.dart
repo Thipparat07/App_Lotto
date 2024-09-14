@@ -1,10 +1,14 @@
+import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/get_navigation.dart';
+import 'package:project_01/config/config.dart';
+import 'package:project_01/model/basketGetResponse.dart';
 import 'package:project_01/pages/findLotto.dart';
 import 'package:quickalert/quickalert.dart';
+import 'package:http/http.dart' as http;
 
 class lottoListPage extends StatefulWidget {
   int uid = 0;
@@ -15,6 +19,51 @@ class lottoListPage extends StatefulWidget {
 }
 
 class _lottoListPageState extends State<lottoListPage> {
+  late BasketGetResponse basketData;
+  bool isLoading = true;
+  String url = '';
+
+  @override
+  void initState() {
+    super.initState();
+    Configuration.getConfig().then(
+      (config) {
+        url = config['apiEndpoint'] ?? ''; // Ensure URL is properly set
+        fetchBasketData(); // Fetch data once URL is set
+      },
+    );
+  }
+
+  Future<void> fetchBasketData() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http.get(Uri.parse('$url/basket/${widget.uid}'));
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        basketData = BasketGetResponse.fromJson(jsonResponse);
+
+
+        log('Response status: ${response.statusCode}');
+        log('Response body: ${response.body}');
+
+        setState(() {
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load basket data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: ${e.toString()}');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,7 +102,10 @@ class _lottoListPageState extends State<lottoListPage> {
                             child: GestureDetector(
                                 onTap: () => {
                                       log("Back to..."),
-                                      Get.to(() =>  findLottoPage(uid: widget.uid,),
+                                      Get.to(
+                                          () => findLottoPage(
+                                                uid: widget.uid,
+                                              ),
                                           transition: Transition.circularReveal,
                                           duration: const Duration(seconds: 2))
                                     },
